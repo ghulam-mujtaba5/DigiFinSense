@@ -8,6 +8,7 @@
 
 // AppRegistry.registerComponent(appName, () => App);
 
+
 // Import the polyfill at the top of index.js
 import 'react-native-url-polyfill/auto';
 
