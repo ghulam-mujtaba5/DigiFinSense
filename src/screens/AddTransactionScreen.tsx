@@ -1,93 +1,77 @@
 import React, { useState } from 'react';
-import {
-  View,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  StyleSheet,
-  StatusBar,
-  SafeAreaView,
-  Alert,
-  Switch,
-} from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, Switch, Alert } from 'react-native';
 import { AddTransactionScreenProps, Transaction } from '../navigation/types';
 
-type Props = AddTransactionScreenProps & {
-  addTransaction: (newTransaction: Omit<Transaction, 'id' | 'date'>) => void;
-};
-
-const AddTransactionScreen = ({ navigation, addTransaction }: Props) => {
+const AddTransactionScreen = ({ navigation, addTransaction }: AddTransactionScreenProps) => {
   const [description, setDescription] = useState('');
   const [amount, setAmount] = useState('');
-  const [isExpense, setIsExpense] = useState(true);
+  const [type, setType] = useState<'income' | 'expense'>('income');
   const [category, setCategory] = useState('');
 
   const handleAddTransaction = () => {
-    const parsedAmount = parseFloat(amount);
-    const transactionCategory = isExpense ? category : 'Income';
-    if (description.trim() && !isNaN(parsedAmount) && (isExpense ? category.trim() : true)) {
-      addTransaction({
-        description,
-        amount: parsedAmount,
-        type: isExpense ? 'expense' : 'income',
-        category: transactionCategory,
-      });
-      navigation.goBack();
-    } else {
-      Alert.alert('Error', 'Please fill in all fields correctly.');
+    const transactionCategory = type === 'expense' ? category : 'Income';
+    if (!description || !amount || (type === 'expense' && !category)) {
+      Alert.alert('Error', 'Please fill all required fields');
+      return;
     }
+
+    const newTransaction: Omit<Transaction, 'id'> = {
+      description,
+      amount: parseFloat(amount),
+      type,
+      category: transactionCategory,
+      date: new Date().toISOString().split('T')[0],
+    };
+
+    addTransaction(newTransaction);
+    navigation.goBack();
   };
 
   return (
-    <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="light-content" />
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()}>
-          <Text style={styles.backButton}>←</Text>
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Add Transaction</Text>
+    <View style={styles.container}>
+      <Text style={styles.title}>Add Transaction</Text>
+      
+      <TextInput
+        style={styles.input}
+        placeholder="Description"
+        placeholderTextColor="#A9A9A9"
+        value={description}
+        onChangeText={setDescription}
+      />
+      <TextInput
+        style={styles.input}
+        placeholder="Amount"
+        placeholderTextColor="#A9A9A9"
+        value={amount}
+        onChangeText={setAmount}
+        keyboardType="numeric"
+      />
+
+      <View style={styles.switchContainer}>
+        <Text style={styles.switchLabel}>Income</Text>
+        <Switch
+          value={type === 'income'}
+          onValueChange={(value) => setType(value ? 'income' : 'expense')}
+          thumbColor={type === 'income' ? '#4CAF50' : '#FF6347'}
+          trackColor={{ false: '#f4f3f4', true: '#81b0ff' }}
+        />
+        <Text style={styles.switchLabel}>Expense</Text>
       </View>
-      <View style={styles.form}>
+
+      {type === 'expense' && (
         <TextInput
           style={styles.input}
-          placeholder="Description (e.g., Groceries)"
-          placeholderTextColor="#888"
-          value={description}
-          onChangeText={setDescription}
+          placeholder="Category (e.g., Food, Transport)"
+          placeholderTextColor="#A9A9A9"
+          value={category}
+          onChangeText={setCategory}
         />
-        <TextInput
-          style={styles.input}
-          placeholder="Amount (e.g., 50.00)"
-          placeholderTextColor="#888"
-          value={amount}
-          onChangeText={setAmount}
-          keyboardType="numeric"
-        />
-        {isExpense && (
-          <TextInput
-            style={styles.input}
-            placeholder="Category (e.g., Food)"
-            placeholderTextColor="#888"
-            value={category}
-            onChangeText={setCategory}
-          />
-        )}
-        <View style={styles.switchContainer}>
-          <Text style={styles.switchLabel}>Income</Text>
-          <Switch
-            trackColor={{ false: '#f44336', true: '#4caf50' }}
-            thumbColor={'#f4f3f4'}
-            ios_backgroundColor="#3e3e3e"
-            onValueChange={() => setIsExpense(previousState => !previousState)}
-            value={!isExpense}
-          />
-          <Text style={styles.switchLabel}>Expense</Text>
-        </View>
-        <TouchableOpacity style={styles.saveButton} onPress={handleAddTransaction}>
-          <Text style={styles.saveButtonText}>Save Transaction</Text>
-        </TouchableOpacity>
-      </View>
-    </SafeAreaView>
+      )}
+
+      <TouchableOpacity style={styles.saveButton} onPress={handleAddTransaction}>
+        <Text style={styles.saveButtonText}>Save Transaction</Text>
+      </TouchableOpacity>
+    </View>
   );
 };
 
@@ -95,54 +79,47 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#121212',
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
     padding: 20,
-    paddingTop: StatusBar.currentHeight || 20,
+    paddingTop: 50,
   },
-  backButton: {
-    color: '#fff',
-    fontSize: 24,
-    marginRight: 15,
-  },
-  headerTitle: {
-    fontSize: 22,
+  title: {
+    fontSize: 28,
     fontWeight: 'bold',
-    color: '#fff',
-  },
-  form: {
-    padding: 20,
+    color: '#FFFFFF',
+    marginBottom: 30,
+    textAlign: 'center',
   },
   input: {
-    backgroundColor: '#1e1e1e',
-    color: '#fff',
-    padding: 15,
+    backgroundColor: '#1E1E1E',
+    color: '#FFFFFF',
+    paddingHorizontal: 15,
+    paddingVertical: 15,
     borderRadius: 10,
-    marginBottom: 15,
     fontSize: 16,
+    marginBottom: 20,
+    borderWidth: 1,
+    borderColor: '#333333',
   },
   switchContainer: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    marginVertical: 20,
+    marginBottom: 20,
   },
   switchLabel: {
-    color: '#fff',
+    color: '#FFFFFF',
     fontSize: 16,
     marginHorizontal: 10,
   },
   saveButton: {
-    backgroundColor: '#007bff',
+    backgroundColor: '#6200EE',
     padding: 18,
     borderRadius: 10,
     alignItems: 'center',
-    marginTop: 10,
+    marginTop: 20,
   },
   saveButtonText: {
-    color: '#fff',
+    color: '#FFFFFF',
     fontSize: 18,
     fontWeight: 'bold',
   },

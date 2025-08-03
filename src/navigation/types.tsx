@@ -1,6 +1,6 @@
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 
-// Core Data Structures
+// Core Data Types
 export type Asset = {
   id: string;
   name: string;
@@ -11,6 +11,15 @@ export type Asset = {
   icon: string;
 };
 
+export type Transaction = {
+  id: string;
+  description: string;
+  amount: number;
+  date: string;
+  type: 'income' | 'expense';
+  category: string;
+};
+
 export type Budget = {
   id: string;
   category: string;
@@ -18,16 +27,7 @@ export type Budget = {
   spent: number;
 };
 
-export type Transaction = {
-  id: string;
-  description: string;
-  amount: number;
-  date: string;
-  type: 'income' | 'expense';
-  category?: string;
-};
-
-// Navigation Param List
+// Navigation Stack
 export type RootStackParamList = {
   Login: undefined;
   Signup: undefined;
@@ -40,13 +40,14 @@ export type RootStackParamList = {
   AddBudget: undefined;
 };
 
-// Screen Props
+// Screen-specific Prop Types
 export type LoginScreenProps = NativeStackScreenProps<RootStackParamList, 'Login'>;
 export type SignupScreenProps = NativeStackScreenProps<RootStackParamList, 'Signup'>;
 
 export type DashboardScreenProps = NativeStackScreenProps<RootStackParamList, 'Dashboard'> & {
   assets: Asset[];
   transactions: Transaction[];
+  budgets: Budget[];
 };
 
 export type AddAssetScreenProps = NativeStackScreenProps<RootStackParamList, 'AddAsset'> & {

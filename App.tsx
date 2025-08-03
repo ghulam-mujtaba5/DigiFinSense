@@ -1,43 +1,29 @@
 import React, { useState } from 'react';
 import AppNavigator from './src/navigation/AppNavigator';
-import { Transaction, Budget } from './src/navigation/types';
+import { Asset, Transaction, Budget } from './src/navigation/types';
 
-export type Asset = {
-  id: string;
-  name: string;
-  ticker: string;
-  value: number;
-  change: number;
-  icon: string;
-};
-
-// Dummy data for the asset list
+// Dummy data using the centralized types
 const DUMMY_ASSETS: Asset[] = [
-  { id: '1', name: 'Bitcoin', ticker: 'BTC', value: 6800.5, change: 2.5, icon: 'B' },
-  { id: '2', name: 'Ethereum', ticker: 'ETH', value: 3400.2, change: -1.2, icon: 'E' },
-  { id: '3', name: 'Apple Inc.', ticker: 'AAPL', value: 1250.75, change: 5.1, icon: 'A' },
-  { id: '4', name: 'Tesla Inc.', ticker: 'TSLA', value: 850.0, change: 0.8, icon: 'T' },
+  { id: '1', name: 'Bitcoin', ticker: 'BTC', amount: 0.5, value: 45000, change: 2.5, icon: 'https://img.icons8.com/fluency/48/bitcoin.png' },
+  { id: '2', name: 'Ethereum', ticker: 'ETH', amount: 10, value: 3000, change: -1.2, icon: 'https://img.icons8.com/fluency/48/ethereum.png' },
+  { id: '3', name: 'Tesla', ticker: 'TSLA', amount: 15, value: 300, change: 5.1, icon: 'https://img.icons8.com/fluency/48/tesla.png' },
 ];
 
 const DUMMY_TRANSACTIONS: Transaction[] = [
-  { id: '1', description: 'Salary', amount: 5000, date: '2023-07-01', type: 'income', category: 'Income' },
+  { id: '1', description: 'Salary', amount: 5000, date: '2024-07-01', type: 'income', category: 'Income' },
+  { id: '2', description: 'Rent', amount: 1500, date: '2024-07-02', type: 'expense', category: 'Housing' },
+  { id: '3', description: 'Groceries', amount: 250, date: '2024-07-03', type: 'expense', category: 'Food' },
+];
+
+const DUMMY_BUDGETS: Budget[] = [
+  { id: '1', category: 'Food', limit: 500, spent: 250 },
+  { id: '2', category: 'Shopping', limit: 300, spent: 350 },
+];
 
 const App = () => {
-  const [assets, setAssets] = useState<Asset[]>([
-    { id: '1', name: 'Bitcoin', ticker: 'BTC', amount: 0.5, value: 30000, change: 2.5, icon: 'https://img.icons8.com/fluency/48/bitcoin.png' },
-    { id: '2', name: 'Ethereum', ticker: 'ETH', amount: 10, value: 20000, change: -1.2, icon: 'https://img.icons8.com/fluency/48/ethereum.png' },
-  ]);
-
-  const [transactions, setTransactions] = useState<Transaction[]>([
-    { id: '1', description: 'Salary', amount: 5000, date: '2024-07-01', type: 'income', category: 'Income' },
-    { id: '2', description: 'Groceries', amount: 150, date: '2024-07-05', type: 'expense', category: 'Food' },
-    { id: '3', description: 'Rent', amount: 1500, date: '2024-07-02', type: 'expense', category: 'Housing' },
-  ]);
-
-  const [budgets, setBudgets] = useState<Budget[]>([
-    { id: '1', category: 'Food', limit: 500, spent: 150 },
-    { id: '2', category: 'Shopping', limit: 300, spent: 350 },
-  ]);
+  const [assets, setAssets] = useState<Asset[]>(DUMMY_ASSETS);
+  const [transactions, setTransactions] = useState<Transaction[]>(DUMMY_TRANSACTIONS);
+  const [budgets, setBudgets] = useState<Budget[]>(DUMMY_BUDGETS);
 
   const addAsset = (asset: Omit<Asset, 'id'>) => {
     setAssets(prevAssets => [

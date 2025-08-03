@@ -47,11 +47,10 @@ const chartConfig = {
   propsForDots: {
     r: '6',
     strokeWidth: '2',
-    stroke: '#007bff',
   },
 };
 
-const DashboardScreen = ({ navigation, assets, transactions }: Props) => {
+const DashboardScreen = ({ navigation, assets, transactions, budgets }: Props) => {
   const totalAssetValue = assets.reduce((sum, asset) => sum + asset.value, 0);
   const cashBalance = transactions.reduce((balance, transaction) => {
     return transaction.type === 'income' ? balance + transaction.amount : balance - transaction.amount;
@@ -130,6 +129,33 @@ const DashboardScreen = ({ navigation, assets, transactions }: Props) => {
           keyExtractor={item => item.id}
           style={styles.assetList}
           scrollEnabled={false} // Disable scrolling on the FlatList
+        />
+
+        <Text style={styles.sectionTitle}>Budgets</Text>
+        {budgets.map(budget => (
+          <View key={budget.id} style={styles.budgetItem}>
+            <View style={styles.budgetInfo}>
+              <Text style={styles.budgetCategory}>{budget.category}</Text>
+              <Text style={styles.budgetLimit}>${budget.spent.toFixed(2)} / ${budget.limit.toFixed(2)}</Text>
+            </View>
+            <View style={styles.progressBarContainer}>
+              <View style={[styles.progressBar, { width: `${Math.min((budget.spent / budget.limit) * 100, 100)}%` }]} />
+            </View>
+          </View>
+        ))}
+
+        <Text style={styles.sectionTitle}>Recent Transactions</Text>
+        <FlatList
+          data={transactions.slice(0, 5)} // Show latest 5 transactions
+          keyExtractor={item => item.id}
+          renderItem={({ item }) => (
+            <View style={styles.transactionItem}>
+              <Text style={styles.transactionDescription}>{item.description}</Text>
+              <Text style={[styles.transactionAmount, { color: item.type === 'income' ? '#4CAF50' : '#FF6347' }]}>
+                {item.type === 'income' ? '+' : '-'}${item.amount.toFixed(2)}
+              </Text>
+            </View>
+          )}
         />
 
         <View style={styles.chartContainer}>
@@ -285,8 +311,61 @@ const styles = StyleSheet.create({
     elevation: 8,
   },
   fabIcon: {
-    fontSize: 30,
-    color: 'white',
+    fontSize: 24,
+    color: '#fff',
+  },
+  sectionTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#FFFFFF',
+    marginTop: 20,
+    marginBottom: 10,
+  },
+  budgetItem: {
+    backgroundColor: '#1E1E1E',
+    padding: 15,
+    borderRadius: 10,
+    marginBottom: 10,
+  },
+  budgetInfo: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 10,
+  },
+  budgetCategory: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  budgetLimit: {
+    color: '#A9A9A9',
+    fontSize: 14,
+  },
+  progressBarContainer: {
+    height: 8,
+    backgroundColor: '#333333',
+    borderRadius: 4,
+  },
+  progressBar: {
+    height: '100%',
+    backgroundColor: '#6200EE',
+    borderRadius: 4,
+  },
+  transactionItem: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 15,
+    borderBottomWidth: 1,
+    borderBottomColor: '#333',
+  },
+  transactionDescription: {
+    fontSize: 16,
+    color: '#FFFFFF',
+  },
+  transactionAmount: {
+    fontSize: 16,
+    fontWeight: '600',
   },
 });
 

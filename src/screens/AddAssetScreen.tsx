@@ -12,22 +12,29 @@ import {
 import { AddAssetScreenProps, Asset } from '../navigation/types';
 
 type Props = AddAssetScreenProps & {
-  addAsset: (newAsset: Omit<Asset, 'id' | 'change' | 'icon' | 'value'> & { value: number }) => void;
+  addAsset: (newAsset: Asset) => void;
 };
 
 const AddAssetScreen = ({ navigation, addAsset }: Props) => {
   const [name, setName] = useState('');
   const [ticker, setTicker] = useState('');
   const [amount, setAmount] = useState('');
+  const [value, setValue] = useState('');
 
-    const handleAddAsset = () => {
-    const parsedAmount = parseFloat(amount);
-    if (name.trim() && ticker.trim() && !isNaN(parsedAmount)) {
-      addAsset({ name, ticker, value: parsedAmount });
-      navigation.goBack();
-    } else {
-      Alert.alert('Error', 'Please fill in all fields correctly.');
+  const handleAddAsset = () => {
+    if (!name || !ticker || !value || !amount) {
+      Alert.alert('Error', 'Please fill in all fields.');
+      return;
     }
+    addAsset({
+      name,
+      ticker,
+      amount: parseFloat(amount),
+      value: parseFloat(value),
+      change: 0, // Default change to 0 for new assets
+      icon: name.charAt(0).toUpperCase(), // Default icon to first letter
+    });
+    navigation.goBack();
   };
 
   return (
@@ -56,10 +63,18 @@ const AddAssetScreen = ({ navigation, addAsset }: Props) => {
         />
         <TextInput
           style={styles.input}
-          placeholder="Amount (e.g., 1.5)"
-          placeholderTextColor="#888"
+          placeholder="Amount Owned"
+          placeholderTextColor="#A9A9A9"
           value={amount}
           onChangeText={setAmount}
+          keyboardType="numeric"
+        />
+        <TextInput
+          style={styles.input}
+          placeholder="Current Value per Unit"
+          placeholderTextColor="#A9A9A9"
+          value={value}
+          onChangeText={setValue}
           keyboardType="numeric"
         />
         <TouchableOpacity style={styles.saveButton} onPress={handleAddAsset}>
