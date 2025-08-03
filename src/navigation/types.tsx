@@ -1,22 +1,74 @@
-import type { NativeStackScreenProps } from '@react-navigation/native-stack';
+import { NativeStackScreenProps } from '@react-navigation/native-stack';
 
+// Core Data Structures
 export type Asset = {
   id: string;
   name: string;
   ticker: string;
+  amount: number;
   value: number;
   change: number;
   icon: string;
 };
 
+export type Budget = {
+  id: string;
+  category: string;
+  limit: number;
+  spent: number;
+};
+
+export type Transaction = {
+  id: string;
+  description: string;
+  amount: number;
+  date: string;
+  type: 'income' | 'expense';
+  category?: string;
+};
+
+// Navigation Param List
 export type RootStackParamList = {
   Login: undefined;
   Signup: undefined;
   Dashboard: undefined;
   AddAsset: undefined;
+  Transactions: undefined;
+  AddTransaction: undefined;
+  Analytics: undefined;
+  Budgets: undefined;
+  AddBudget: undefined;
 };
 
+// Screen Props
 export type LoginScreenProps = NativeStackScreenProps<RootStackParamList, 'Login'>;
 export type SignupScreenProps = NativeStackScreenProps<RootStackParamList, 'Signup'>;
-export type DashboardScreenProps = NativeStackScreenProps<RootStackParamList, 'Dashboard'>;
-export type AddAssetScreenProps = NativeStackScreenProps<RootStackParamList, 'AddAsset'>;
+
+export type DashboardScreenProps = NativeStackScreenProps<RootStackParamList, 'Dashboard'> & {
+  assets: Asset[];
+  transactions: Transaction[];
+};
+
+export type AddAssetScreenProps = NativeStackScreenProps<RootStackParamList, 'AddAsset'> & {
+  addAsset: (asset: Omit<Asset, 'id'>) => void;
+};
+
+export type TransactionsScreenProps = NativeStackScreenProps<RootStackParamList, 'Transactions'> & {
+  transactions: Transaction[];
+};
+
+export type AddTransactionScreenProps = NativeStackScreenProps<RootStackParamList, 'AddTransaction'> & {
+  addTransaction: (transaction: Omit<Transaction, 'id'>) => void;
+};
+
+export type AnalyticsScreenProps = NativeStackScreenProps<RootStackParamList, 'Analytics'> & {
+  transactions: Transaction[];
+};
+
+export type BudgetsScreenProps = NativeStackScreenProps<RootStackParamList, 'Budgets'> & {
+  budgets: Budget[];
+};
+
+export type AddBudgetScreenProps = NativeStackScreenProps<RootStackParamList, 'AddBudget'> & {
+  addBudget: (budget: Omit<Budget, 'id' | 'spent'>) => void;
+};

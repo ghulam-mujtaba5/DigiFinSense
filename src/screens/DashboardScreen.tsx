@@ -7,15 +7,64 @@ import {
   SafeAreaView,
   FlatList,
   TouchableOpacity,
+  Dimensions,
+  ScrollView,
 } from 'react-native';
-import { Asset, DashboardScreenProps } from '../navigation/types';
+import { LineChart, PieChart } from 'react-native-chart-kit';
+import { Asset, DashboardScreenProps, Transaction } from '../navigation/types';
 
 type Props = DashboardScreenProps & {
   assets: Asset[];
+  transactions: Transaction[];
 };
 
-const DashboardScreen = ({ navigation, assets }: Props) => {
-  const totalBalance = assets.reduce((sum, asset) => sum + asset.value, 0);
+const chartData = {
+  labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
+  datasets: [
+    {
+      data: [
+        Math.random() * 10000,
+        Math.random() * 10000,
+        Math.random() * 10000,
+        Math.random() * 10000,
+        Math.random() * 10000,
+        Math.random() * 10000,
+      ],
+    },
+  ],
+};
+
+const chartConfig = {
+  backgroundColor: '#1e1e1e',
+  backgroundGradientFrom: '#1e1e1e',
+  backgroundGradientTo: '#1e1e1e',
+  decimalPlaces: 2,
+  color: (opacity = 1) => `rgba(255, 255, 255, ${opacity})`,
+  labelColor: (opacity = 1) => `rgba(255, 255, 255, ${opacity})`,
+  style: {
+    borderRadius: 16,
+  },
+  propsForDots: {
+    r: '6',
+    strokeWidth: '2',
+    stroke: '#007bff',
+  },
+};
+
+const DashboardScreen = ({ navigation, assets, transactions }: Props) => {
+  const totalAssetValue = assets.reduce((sum, asset) => sum + asset.value, 0);
+  const cashBalance = transactions.reduce((balance, transaction) => {
+    return transaction.type === 'income' ? balance + transaction.amount : balance - transaction.amount;
+  }, 0);
+  const netWorth = totalAssetValue + cashBalance;
+
+  const pieChartData = assets.map((asset, index) => ({
+    name: asset.ticker,
+    population: asset.value,
+    color: ['#007bff', '#ff4d4d', '#33cc33', '#ffcc00', '#8a2be2'][index % 5],
+    legendFontColor: '#7F7F7F',
+    legendFontSize: 15,
+  }));
 
   const renderAsset = ({ item }: { item: Asset }) => (
     <View style={styles.assetRow}>
@@ -38,24 +87,66 @@ const DashboardScreen = ({ navigation, assets }: Props) => {
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="light-content" />
-      
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>Dashboard</Text>
-      </View>
 
-      <View style={styles.balanceCard}>
-        <Text style={styles.balanceLabel}>Total Balance</Text>
-        <Text style={styles.balanceAmount}>${totalBalance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</Text>
-      </View>
+      <ScrollView contentContainerStyle={styles.scrollViewContent}>
+        <View style={styles.header}>
+          <Text style={styles.headerTitle}>Dashboard</Text>
+        </View>
 
-      <Text style={styles.listHeader}>Your Assets</Text>
-      
-      <FlatList
-        data={assets}
-        renderItem={renderAsset}
-        keyExtractor={item => item.id}
-        style={styles.assetList}
-      />
+        <View style={styles.headerButtons}>
+          <TouchableOpacity onPress={() => navigation.navigate('Transactions')}>
+            <Text style={styles.headerButtonText}>Transactions</Text>
+          </TouchableOpacity>
+          <TouchableOpacity onPress={() => navigation.navigate('Analytics')}>
+            <Text style={styles.headerButtonText}>Analytics</Text>
+          </TouchableOpacity>
+        </View>
+
+        <View style={styles.balanceCard}>
+          <Text style={styles.balanceLabel}>Net Worth</Text>
+          <Text style={styles.balanceAmount}>${netWorth.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</Text>
+        </View>
+
+        <View style={styles.chartContainer}>
+          <Text style={styles.chartHeader}>Portfolio Performance</Text>
+          <LineChart
+            data={chartData}
+            width={Dimensions.get('window').width - 40}
+            height={220}
+            yAxisLabel="$"
+            yAxisSuffix="k"
+            yAxisInterval={1}
+            chartConfig={chartConfig}
+            bezier
+            style={styles.chart}
+          />
+        </View>
+
+        <Text style={styles.listHeader}>Your Assets</Text>
+        
+        <FlatList
+          data={assets}
+          renderItem={renderAsset}
+          keyExtractor={item => item.id}
+          style={styles.assetList}
+          scrollEnabled={false} // Disable scrolling on the FlatList
+        />
+
+        <View style={styles.chartContainer}>
+          <Text style={styles.chartHeader}>Asset Allocation</Text>
+          <PieChart
+            data={pieChartData}
+            width={Dimensions.get('window').width - 40}
+            height={220}
+            chartConfig={chartConfig}
+            accessor={'population'}
+            backgroundColor={'transparent'}
+            paddingLeft={'15'}
+            center={[10, 0]}
+            absolute
+          />
+        </View>
+      </ScrollView>
 
       <TouchableOpacity style={styles.fab} onPress={() => navigation.navigate('AddAsset')}>
         <Text style={styles.fabIcon}>+</Text>
@@ -65,6 +156,19 @@ const DashboardScreen = ({ navigation, assets }: Props) => {
 };
 
 const styles = StyleSheet.create({
+  scrollViewContent: {
+    paddingBottom: 80, // Ensure there's space for the FAB
+  },
+  headerButtons: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    paddingHorizontal: 20,
+    paddingTop: 10,
+  },
+  headerButtonText: {
+    color: '#007bff',
+    fontSize: 16,
+  },
   container: {
     flex: 1,
     backgroundColor: '#121212',
@@ -97,11 +201,28 @@ const styles = StyleSheet.create({
     marginTop: 5,
   },
   listHeader: {
-    fontSize: 20,
+    fontSize: 18,
     fontWeight: 'bold',
     color: '#fff',
-    marginHorizontal: 20,
+    paddingHorizontal: 20,
+    marginTop: 20,
     marginBottom: 10,
+  },
+  chartContainer: {
+    marginTop: 20,
+    alignItems: 'center',
+  },
+  chartHeader: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#fff',
+    marginBottom: 10,
+    alignSelf: 'flex-start',
+    paddingHorizontal: 20,
+  },
+  chart: {
+    marginVertical: 8,
+    borderRadius: 16,
   },
   assetList: {
     paddingHorizontal: 20,
