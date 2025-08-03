@@ -8,28 +8,14 @@ import {
   FlatList,
   TouchableOpacity,
 } from 'react-native';
-import { DashboardScreenProps } from '../navigation/types';
+import { Asset, DashboardScreenProps } from '../navigation/types';
 
-// Define the type for a single asset
-type Asset = {
-  id: string;
-  name: string;
-  ticker: string;
-  value: number;
-  change: number;
-  icon: string;
+type Props = DashboardScreenProps & {
+  assets: Asset[];
 };
 
-// Dummy data for the asset list
-const DUMMY_ASSETS: Asset[] = [
-  { id: '1', name: 'Bitcoin', ticker: 'BTC', value: 6800.5, change: 2.5, icon: 'B' },
-  { id: '2', name: 'Ethereum', ticker: 'ETH', value: 3400.2, change: -1.2, icon: 'E' },
-  { id: '3', name: 'Apple Inc.', ticker: 'AAPL', value: 1250.75, change: 5.1, icon: 'A' },
-  { id: '4', name: 'Tesla Inc.', ticker: 'TSLA', value: 850.0, change: 0.8, icon: 'T' },
-];
-
-const DashboardScreen = ({ navigation }: DashboardScreenProps) => {
-  const totalBalance = DUMMY_ASSETS.reduce((sum, asset) => sum + asset.value, 0);
+const DashboardScreen = ({ navigation, assets }: Props) => {
+  const totalBalance = assets.reduce((sum, asset) => sum + asset.value, 0);
 
   const renderAsset = ({ item }: { item: Asset }) => (
     <View style={styles.assetRow}>
@@ -65,13 +51,13 @@ const DashboardScreen = ({ navigation }: DashboardScreenProps) => {
       <Text style={styles.listHeader}>Your Assets</Text>
       
       <FlatList
-        data={DUMMY_ASSETS}
+        data={assets}
         renderItem={renderAsset}
         keyExtractor={item => item.id}
         style={styles.assetList}
       />
 
-      <TouchableOpacity style={styles.fab}>
+      <TouchableOpacity style={styles.fab} onPress={() => navigation.navigate('AddAsset')}>
         <Text style={styles.fabIcon}>+</Text>
       </TouchableOpacity>
     </SafeAreaView>
