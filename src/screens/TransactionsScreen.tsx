@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo, useState, useCallback } from 'react';
 import {
   View,
   Text,
@@ -6,127 +6,172 @@ import {
   StatusBar,
   SafeAreaView,
   FlatList,
-  TouchableOpacity,
+  Pressable,
 } from 'react-native';
 import { TransactionsScreenProps, Transaction } from '../navigation/types';
+import { ListItem, EmptyState, Skeleton, ErrorBanner } from '../../source/components/ui';
+import { useTheme } from '../../source/theme/ThemeProvider';
+import type { Tokens } from '../../source/theme/tokens';
 
 type Props = TransactionsScreenProps & {
   transactions: Transaction[];
 };
 
 const TransactionsScreen = ({ navigation, transactions }: Props) => {
+  const { tokens } = useTheme();
+  const styles = useMemo(() => makeStyles(tokens), [tokens]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+  const handleRetry = useCallback(() => {
+    setErrorMessage(null);
+    setIsLoading(true);
+    setTimeout(() => setIsLoading(false), 1000);
+  }, []);
+  const handleDismiss = useCallback(() => setErrorMessage(null), []);
+
   const renderTransaction = ({ item }: { item: Transaction }) => (
-    <View style={styles.transactionRow}>
-      <View style={styles.transactionDetails}>
-        <Text style={styles.transactionDescription}>{item.description}</Text>
-        <Text style={styles.transactionDate}>{item.date}</Text>
-      </View>
-      <Text
-        style={[
-          styles.transactionAmount,
-          item.type === 'income' ? styles.income : styles.expense,
-        ]}
-      >
-        {item.type === 'income' ? '+' : '-'}${item.amount.toFixed(2)}
-      </Text>
-    </View>
+    <ListItem
+      title={item.description}
+      subtitle={item.date}
+      right={
+        <Text style={[styles.transactionAmount, { color: item.type === 'income' ? tokens.colors.success : tokens.colors.danger }]}>
+          {item.type === 'income' ? '+' : '-'}${item.amount.toFixed(2)}
+        </Text>
+      }
+    />
   );
 
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="light-content" />
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()}>
+        <Pressable
+          onPress={() => navigation.goBack()}
+          accessibilityRole="button"
+          accessibilityLabel="Go back"
+          accessibilityHint="Returns to the previous screen"
+          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+        >
           <Text style={styles.backButton}>←</Text>
-        </TouchableOpacity>
+        </Pressable>
         <Text style={styles.headerTitle}>Transactions</Text>
       </View>
+      {errorMessage ? (
+        <View style={{ paddingHorizontal: 16 }}>
+          <ErrorBanner message={errorMessage} onRetry={handleRetry} onDismiss={handleDismiss} />
+        </View>
+      ) : null}
       <FlatList
-        data={transactions}
+        data={isLoading ? [] : transactions}
         renderItem={renderTransaction}
         keyExtractor={item => item.id}
         style={styles.transactionList}
+        contentContainerStyle={(isLoading || transactions.length === 0) ? styles.emptyListContent : styles.listContent}
+        ListEmptyComponent={
+          isLoading ? (
+            <View style={{ width: '100%', paddingHorizontal: 16 }}>
+              <View style={{ gap: 12 }}>
+                <Skeleton height={64} />
+                <Skeleton height={64} />
+                <Skeleton height={64} />
+              </View>
+            </View>
+          ) : (
+            <View style={{ width: '100%', paddingHorizontal: 16 }}>
+              <EmptyState title="No transactions yet" subtitle="Add your first transaction to get started." />
+            </View>
+          )
+        }
+        initialNumToRender={12}
+        windowSize={11}
+        maxToRenderPerBatch={12}
+        updateCellsBatchingPeriod={50}
+        removeClippedSubviews
       />
-      <TouchableOpacity
+      <Pressable
         style={styles.fab}
         onPress={() => navigation.navigate('AddTransaction')}
+        accessibilityRole="button"
+        accessibilityLabel="Add transaction"
+        accessibilityHint="Opens the add transaction form"
+        hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
       >
         <Text style={styles.fabIcon}>+</Text>
-      </TouchableOpacity>
+      </Pressable>
     </SafeAreaView>
   );
 };
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#121212',
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: 20,
-    paddingTop: StatusBar.currentHeight || 20,
-  },
-  backButton: {
-    color: '#fff',
-    fontSize: 24,
-    marginRight: 15,
-  },
-  headerTitle: {
-    fontSize: 22,
-    fontWeight: 'bold',
-    color: '#fff',
-  },
-  transactionList: {
-    flex: 1,
-  },
-  transactionRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    padding: 20,
-    borderBottomWidth: 1,
-    borderBottomColor: '#1e1e1e',
-  },
-  transactionDetails: {
-    flex: 1,
-  },
-  transactionDescription: {
-    fontSize: 16,
-    color: '#fff',
-  },
-  transactionDate: {
-    fontSize: 14,
-    color: '#888',
-    marginTop: 4,
-  },
-  transactionAmount: {
-    fontSize: 16,
-    fontWeight: 'bold',
-  },
-  income: {
-    color: '#4caf50',
-  },
-  expense: {
-    color: '#f44336',
-  },
-  fab: {
-    position: 'absolute',
-    right: 20,
-    bottom: 20,
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    backgroundColor: '#007bff',
-    justifyContent: 'center',
-    alignItems: 'center',
-    elevation: 8,
-  },
-  fabIcon: {
-    fontSize: 24,
-    color: '#fff',
-  },
-});
+const makeStyles = (t: Tokens) =>
+  StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: t.colors.surface,
+    },
+    header: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      padding: t.spacing.lg,
+      paddingTop: StatusBar.currentHeight || t.spacing.lg,
+    },
+    backButton: {
+      color: t.colors.textPrimary,
+      fontSize: 24,
+      marginRight: t.spacing.md,
+    },
+    headerTitle: {
+      fontSize: t.typography.xl,
+      fontWeight: 'bold',
+      color: t.colors.textPrimary,
+    },
+    transactionList: {
+      flex: 1,
+    },
+    listContent: {
+      paddingBottom: t.spacing.xxl * 2,
+    },
+    emptyListContent: {
+      flexGrow: 1,
+      justifyContent: 'center',
+      alignItems: 'center',
+      padding: t.spacing.lg,
+    },
+    transactionAmount: {
+      fontSize: t.typography.md,
+      fontWeight: 'bold',
+    },
+    fab: {
+      position: 'absolute',
+      right: t.spacing.lg,
+      bottom: t.spacing.lg,
+      width: 60,
+      height: 60,
+      borderRadius: 30,
+      backgroundColor: t.colors.fab,
+      justifyContent: 'center',
+      alignItems: 'center',
+      elevation: t.elevation.fab,
+    },
+    fabIcon: {
+      fontSize: 24,
+      color: t.colors.textPrimary,
+    },
+    emptyState: {
+      alignItems: 'center',
+      gap: t.spacing.xs,
+    },
+    emptyTitle: {
+      fontSize: t.typography.lg,
+      color: t.colors.textPrimary,
+      fontWeight: '600',
+    },
+    emptySubtitle: {
+      fontSize: t.typography.sm,
+      color: t.colors.textSecondary,
+      marginTop: 2,
+      textAlign: 'center',
+    },
+  });
 
 export default TransactionsScreen;

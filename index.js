@@ -9,7 +9,8 @@
 // AppRegistry.registerComponent(appName, () => App);
 
 
-// Import the polyfill at the top of index.js
+// Import required shims at the top of index.js
+import 'react-native-gesture-handler';
 import 'react-native-url-polyfill/auto';
 
 /**

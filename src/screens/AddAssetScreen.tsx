@@ -1,15 +1,9 @@
 import React, { useState } from 'react';
-import {
-  View,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  StyleSheet,
-  StatusBar,
-  SafeAreaView,
-  Alert,
-} from 'react-native';
+import { View, Text, StyleSheet, StatusBar, SafeAreaView, Alert, KeyboardAvoidingView, Platform, ScrollView, Pressable } from 'react-native';
 import { AddAssetScreenProps, Asset } from '../navigation/types';
+import { useTheme } from '../../source/theme/ThemeProvider';
+import { Button, Card, Input } from '../../source/components/ui';
+import type { Tokens } from '../../source/theme/tokens';
 
 type Props = AddAssetScreenProps & {
   addAsset: (newAsset: Asset) => void;
@@ -37,98 +31,112 @@ const AddAssetScreen = ({ navigation, addAsset }: Props) => {
     navigation.goBack();
   };
 
+  const { tokens } = useTheme();
+  const styles = React.useMemo(() => makeStyles(tokens), [tokens]);
+  const nameError = name.length === 0 ? undefined : name.trim().length < 2 ? 'Name is too short' : undefined;
+  const tickerError = ticker.length === 0 ? undefined : !/^[A-Z0-9]{1,10}$/.test(ticker) ? 'Use A–Z and 0–9, up to 10 chars' : undefined;
+  const amountError = amount.length === 0 ? undefined : isNaN(Number(amount)) || Number(amount) < 0 ? 'Enter a valid amount' : undefined;
+  const valueError = value.length === 0 ? undefined : isNaN(Number(value)) || Number(value) <= 0 ? 'Enter a positive value' : undefined;
+
   return (
     <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="light-content" />
+      <StatusBar />
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()}>
+        <Pressable
+          onPress={() => navigation.goBack()}
+          accessibilityRole="button"
+          accessibilityLabel="Go back"
+          accessibilityHint="Returns to the previous screen"
+          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+        >
           <Text style={styles.backButton}>←</Text>
-        </TouchableOpacity>
+        </Pressable>
         <Text style={styles.headerTitle}>Add New Asset</Text>
       </View>
-      <View style={styles.form}>
-        <TextInput
-          style={styles.input}
-          placeholder="Asset Name (e.g., Bitcoin)"
-          placeholderTextColor="#888"
-          value={name}
-          onChangeText={setName}
-        />
-        <TextInput
-          style={styles.input}
-          placeholder="Ticker (e.g., BTC)"
-          placeholderTextColor="#888"
-          value={ticker}
-          onChangeText={setTicker}
-        />
-        <TextInput
-          style={styles.input}
-          placeholder="Amount Owned"
-          placeholderTextColor="#A9A9A9"
-          value={amount}
-          onChangeText={setAmount}
-          keyboardType="numeric"
-        />
-        <TextInput
-          style={styles.input}
-          placeholder="Current Value per Unit"
-          placeholderTextColor="#A9A9A9"
-          value={value}
-          onChangeText={setValue}
-          keyboardType="numeric"
-        />
-        <TouchableOpacity style={styles.saveButton} onPress={handleAddAsset}>
-          <Text style={styles.saveButtonText}>Save Asset</Text>
-        </TouchableOpacity>
-      </View>
+      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} keyboardVerticalOffset={64} style={styles.flex}>
+        <ScrollView contentContainerStyle={styles.form} keyboardShouldPersistTaps="handled">
+          <Card>
+            <Input
+              label="Asset Name"
+              placeholder="e.g., Bitcoin"
+              value={name}
+              onChangeText={setName}
+              accessibilityLabel="Asset name"
+              errorText={nameError}
+              autoCapitalize="words"
+            />
+            <Input
+              label="Ticker"
+              placeholder="e.g., BTC"
+              value={ticker}
+              onChangeText={(t) => setTicker(t.toUpperCase())}
+              accessibilityLabel="Ticker"
+              autoCapitalize="characters"
+              errorText={tickerError}
+            />
+            <Input
+              label="Amount Owned"
+              placeholder="0"
+              value={amount}
+              onChangeText={setAmount}
+              keyboardType="numeric"
+              accessibilityLabel="Amount owned"
+              errorText={amountError}
+            />
+            <Input
+              label="Current Value per Unit"
+              placeholder="0.00"
+              value={value}
+              onChangeText={setValue}
+              keyboardType="numeric"
+              accessibilityLabel="Current value per unit"
+              errorText={valueError}
+            />
+          </Card>
+          <Button title="Save Asset" onPress={handleAddAsset} accessibilityLabel="Save asset" accessibilityHint="Saves the asset and returns to the previous screen" />
+        </ScrollView>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 };
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#121212',
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: 20,
-    paddingTop: StatusBar.currentHeight || 20,
-  },
-  backButton: {
-    color: '#fff',
-    fontSize: 24,
-    marginRight: 15,
-  },
-  headerTitle: {
-    fontSize: 22,
-    fontWeight: 'bold',
-    color: '#fff',
-  },
-  form: {
-    padding: 20,
-  },
-  input: {
-    backgroundColor: '#1e1e1e',
-    color: '#fff',
-    padding: 15,
-    borderRadius: 10,
-    marginBottom: 15,
-    fontSize: 16,
-  },
-  saveButton: {
-    backgroundColor: '#007bff',
-    padding: 18,
-    borderRadius: 10,
-    alignItems: 'center',
-    marginTop: 10,
-  },
-  saveButtonText: {
-    color: '#fff',
-    fontSize: 18,
-    fontWeight: 'bold',
-  },
-});
+const makeStyles = (t: Tokens) =>
+  StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: t.colors.surface,
+    },
+    flex: { flex: 1 },
+    header: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      padding: t.spacing.lg,
+      paddingTop: (StatusBar.currentHeight || 20) as number,
+    },
+    backButton: {
+      color: t.colors.textPrimary,
+      fontSize: t.typography.xl,
+      marginRight: t.spacing.md,
+    },
+    headerTitle: {
+      fontSize: t.typography.xl,
+      fontWeight: 'bold',
+      color: t.colors.textPrimary,
+    },
+    form: {
+      padding: t.spacing.lg,
+      gap: t.spacing.md,
+    },
+    input: {
+      backgroundColor: t.colors.card,
+      color: t.colors.textPrimary,
+      padding: t.spacing.md,
+      borderRadius: t.radius.md,
+      marginBottom: t.spacing.md,
+      fontSize: t.typography.md,
+      borderWidth: 1,
+      borderColor: t.colors.border,
+    },
+  });
 
 export default AddAssetScreen;

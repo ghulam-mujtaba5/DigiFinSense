@@ -1,6 +1,9 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert } from 'react-native';
+import { View, Text, StyleSheet, Alert, KeyboardAvoidingView, Platform, ScrollView } from 'react-native';
 import { AddBudgetScreenProps } from '../navigation/types';
+import { useTheme } from '../../source/theme/ThemeProvider';
+import { Button, Card, Input } from '../../source/components/ui';
+import type { Tokens } from '../../source/theme/tokens';
 
 const AddBudgetScreen = ({ navigation, addBudget }: AddBudgetScreenProps) => {
   const [category, setCategory] = useState('');
@@ -21,62 +24,71 @@ const AddBudgetScreen = ({ navigation, addBudget }: AddBudgetScreenProps) => {
     navigation.goBack();
   };
 
+  const { tokens } = useTheme();
+  const styles = React.useMemo(() => makeStyles(tokens), [tokens]);
+  const categoryError = category.length === 0 ? 'Category is required' : undefined;
+  const limitError = limit.length === 0
+    ? undefined
+    : isNaN(Number(limit)) || Number(limit) <= 0
+    ? 'Enter a valid positive limit'
+    : undefined;
+  const isSaveDisabled = !category || !limit || Boolean(categoryError) || Boolean(limitError);
+
   return (
-    <View style={styles.container}>
-      <Text style={styles.header}>Add a New Budget</Text>
-      <TextInput
-        style={styles.input}
-        placeholder="Category (e.g., Food, Shopping)"
-        placeholderTextColor="#A9A9A9"
-        value={category}
-        onChangeText={setCategory}
-      />
-      <TextInput
-        style={styles.input}
-        placeholder="Spending Limit"
-        placeholderTextColor="#A9A9A9"
-        value={limit}
-        onChangeText={setLimit}
-        keyboardType="numeric"
-      />
-      <TouchableOpacity style={styles.saveButton} onPress={handleAddBudget}>
-        <Text style={styles.saveButtonText}>Save Budget</Text>
-      </TouchableOpacity>
-    </View>
+    <KeyboardAvoidingView style={styles.container} behavior={Platform.OS === 'ios' ? 'padding' : undefined} keyboardVerticalOffset={64}>
+      <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
+        <Text style={styles.header}>Add a New Budget</Text>
+        <Card>
+          <Input
+            label="Category"
+            placeholder="e.g., Food, Shopping"
+            value={category}
+            onChangeText={setCategory}
+            accessibilityLabel="Budget category"
+            errorText={category.length === 0 ? undefined : categoryError}
+          />
+          <Input
+            label="Spending Limit"
+            placeholder="0.00"
+            value={limit}
+            onChangeText={setLimit}
+            keyboardType="numeric"
+            accessibilityLabel="Spending limit"
+            errorText={limitError}
+          />
+        </Card>
+        <Button title="Save Budget" onPress={handleAddBudget} accessibilityLabel="Save budget" accessibilityHint="Saves the budget and returns to the previous screen" disabled={isSaveDisabled} />
+      </ScrollView>
+    </KeyboardAvoidingView>
   );
 };
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#121212',
-    padding: 20,
-  },
-  header: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#FFFFFF',
-    marginBottom: 20,
-  },
-  input: {
-    backgroundColor: '#1E1E1E',
-    color: '#FFFFFF',
-    padding: 15,
-    borderRadius: 10,
-    marginBottom: 15,
-    fontSize: 16,
-  },
-  saveButton: {
-    backgroundColor: '#6200EE',
-    padding: 15,
-    borderRadius: 10,
-    alignItems: 'center',
-  },
-  saveButtonText: {
-    color: '#FFFFFF',
-    fontSize: 18,
-    fontWeight: 'bold',
-  },
-});
+const makeStyles = (t: Tokens) =>
+  StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: t.colors.surface,
+    },
+    content: {
+      flexGrow: 1,
+      padding: t.spacing.lg,
+    },
+    header: {
+      fontSize: t.typography.xl,
+      fontWeight: 'bold',
+      color: t.colors.textPrimary,
+      marginBottom: t.spacing.md,
+    },
+    input: {
+      backgroundColor: t.colors.card,
+      color: t.colors.textPrimary,
+      padding: t.spacing.md,
+      borderRadius: t.radius.md,
+      marginBottom: t.spacing.md,
+      fontSize: t.typography.md,
+      borderWidth: 1,
+      borderColor: t.colors.border,
+    },
+  });
 
 export default AddBudgetScreen;

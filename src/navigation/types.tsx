@@ -38,6 +38,7 @@ export type RootStackParamList = {
   Analytics: undefined;
   Budgets: undefined;
   AddBudget: undefined;
+  DebugSupabase: undefined;
 };
 
 // Screen-specific Prop Types
@@ -73,3 +74,5 @@ export type BudgetsScreenProps = NativeStackScreenProps<RootStackParamList, 'Bud
 export type AddBudgetScreenProps = NativeStackScreenProps<RootStackParamList, 'AddBudget'> & {
   addBudget: (budget: Omit<Budget, 'id' | 'spent'>) => void;
 };
+
+export type DebugSupabaseScreenProps = NativeStackScreenProps<RootStackParamList, 'DebugSupabase'>;

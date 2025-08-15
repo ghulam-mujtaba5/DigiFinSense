@@ -1,21 +1,35 @@
-import React from 'react';
+import React, { useState, useCallback } from 'react';
 import {
   View,
   Text,
   StyleSheet,
-  StatusBar,
   SafeAreaView,
   Dimensions,
-  TouchableOpacity,
+  Pressable,
 } from 'react-native';
 import { PieChart } from 'react-native-chart-kit';
 import { AnalyticsScreenProps, Transaction } from '../navigation/types';
+import { useTheme } from '../../source/theme/ThemeProvider';
+import { Card, EmptyState, Skeleton, ErrorBanner } from '../../source/components/ui';
+import type { Tokens } from '../../source/theme/tokens';
 
 type Props = AnalyticsScreenProps & {
   transactions: Transaction[];
 };
 
 const AnalyticsScreen = ({ navigation, transactions }: Props) => {
+  const { tokens } = useTheme();
+  const styles = React.useMemo(() => makeStyles(tokens), [tokens]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+  const handleRetry = useCallback(() => {
+    setErrorMessage(null);
+    setIsLoading(true);
+    setTimeout(() => setIsLoading(false), 1000);
+  }, []);
+  const handleDismiss = useCallback(() => setErrorMessage(null), []);
+
   const spendingByCategory = transactions
     .filter(t => t.type === 'expense')
     .reduce((acc, transaction) => {
@@ -30,29 +44,49 @@ const AnalyticsScreen = ({ navigation, transactions }: Props) => {
   const chartData = Object.keys(spendingByCategory).map((category, index) => ({
     name: category,
     population: spendingByCategory[category],
-    color: ['#ff4d4d', '#ffcc00', '#8a2be2', '#007bff', '#33cc33'][index % 5],
-    legendFontColor: '#7F7F7F',
-    legendFontSize: 15,
+    color: [tokens.colors.danger, tokens.colors.warning, tokens.colors.primary, tokens.colors.secondary, tokens.colors.success][index % 5],
+    legendFontColor: tokens.colors.textSecondary,
+    legendFontSize: tokens.typography.sm,
   }));
 
   const chartConfig = {
-    backgroundGradientFrom: '#1e1e1e',
-    backgroundGradientTo: '#1e1e1e',
-    color: (opacity = 1) => `rgba(255, 255, 255, ${opacity})`,
-  };
+    backgroundGradientFrom: tokens.colors.card,
+    backgroundGradientTo: tokens.colors.card,
+    color: (opacity = 1) => {
+      const alpha = Math.min(Math.max(opacity, 0), 1);
+      // derive from textPrimary
+      return tokens.colors.textPrimary.startsWith('#')
+        ? `${tokens.colors.textPrimary}${Math.round(alpha * 255)
+            .toString(16)
+            .padStart(2, '0')}`
+        : `rgba(255,255,255,${alpha})`;
+    },
+  } as const;
 
   return (
     <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="light-content" />
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()}>
+        <Pressable
+          onPress={() => navigation.goBack()}
+          accessibilityRole="button"
+          accessibilityLabel="Go back"
+          accessibilityHint="Returns to the previous screen"
+          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+        >
           <Text style={styles.backButton}>←</Text>
-        </TouchableOpacity>
+        </Pressable>
         <Text style={styles.headerTitle}>Spending Analytics</Text>
       </View>
-      <View style={styles.chartContainer}>
+      {errorMessage ? (
+        <View style={{ paddingHorizontal: 16 }}>
+          <ErrorBanner message={errorMessage} onRetry={handleRetry} onDismiss={handleDismiss} />
+        </View>
+      ) : null}
+      <Card padded style={styles.chartContainer}>
         <Text style={styles.chartHeader}>Spending by Category</Text>
-        {chartData.length > 0 ? (
+        {isLoading ? (
+          <Skeleton height={220} width={Dimensions.get('window').width - 40} radius={16} />
+        ) : chartData.length > 0 ? (
           <PieChart
             data={chartData}
             width={Dimensions.get('window').width - 40}
@@ -65,54 +99,47 @@ const AnalyticsScreen = ({ navigation, transactions }: Props) => {
             absolute
           />
         ) : (
-          <Text style={styles.noDataText}>No spending data available.</Text>
+          <EmptyState title="No spending data" subtitle="Add expenses to see category insights." />
         )}
-      </View>
+      </Card>
     </SafeAreaView>
   );
 };
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#121212',
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: 20,
-    paddingTop: StatusBar.currentHeight || 20,
-  },
-  backButton: {
-    color: '#fff',
-    fontSize: 24,
-    marginRight: 15,
-  },
-  headerTitle: {
-    fontSize: 22,
-    fontWeight: 'bold',
-    color: '#fff',
-  },
-  chartContainer: {
-    alignItems: 'center',
-    marginTop: 20,
-    padding: 20,
-    backgroundColor: '#1e1e1e',
-    borderRadius: 10,
-    marginHorizontal: 20,
-  },
-  chartHeader: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#fff',
-    marginBottom: 15,
-  },
-  noDataText: {
-    color: '#888',
-    fontSize: 16,
-    textAlign: 'center',
-    marginTop: 20,
-  },
-});
+const makeStyles = (t: Tokens) =>
+  StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: t.colors.surface,
+    },
+    header: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      padding: t.spacing.lg,
+    },
+    backButton: {
+      color: t.colors.textPrimary,
+      fontSize: t.typography.xl,
+      marginRight: t.spacing.md,
+    },
+    headerTitle: {
+      fontSize: t.typography.lg,
+      fontWeight: 'bold',
+      color: t.colors.textPrimary,
+    },
+    chartContainer: {
+      alignItems: 'center',
+      marginTop: t.spacing.lg,
+      padding: t.spacing.lg,
+      marginHorizontal: t.spacing.lg,
+    },
+    chartHeader: {
+      fontSize: t.typography.md,
+      fontWeight: 'bold',
+      color: t.colors.textPrimary,
+      marginBottom: t.spacing.md,
+      alignSelf: 'flex-start',
+    },
+  });
 
 export default AnalyticsScreen;
